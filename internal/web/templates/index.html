@@ -63,8 +63,8 @@
             <div class="form-container">
                 <form id="expenseForm" class="expense-form">
                     <div class="form-group">
-                        <label for="name">Name</label>
-                        <input type="text" id="name" value="-" required>
+                        <label for="amount">Amount</label>
+                        <input type="number" id="amount" step="0.01" min="0.01" max="9000000000000000" required>
                     </div>
                     
                     <div class="form-group">
@@ -72,6 +72,11 @@
                         <select id="category" required>
                             <option value="">categories</option>
                         </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="name">Name</label>
+                        <input type="text" id="name" value="-" required>
                     </div>
     
                     <div class="form-group">
@@ -81,11 +86,6 @@
                             <input type="text" id="tags-input" placeholder="(optional)">
                         </div>
                         <div id="tags-dropdown" class="tags-dropdown"></div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="amount">Amount</label>
-                        <input type="number" id="amount" step="0.01" min="0.01" max="9000000000000000" required>
                     </div>
                     
                     <div class="form-group">
