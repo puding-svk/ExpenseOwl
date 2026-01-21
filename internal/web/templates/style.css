@@ -438,8 +438,6 @@ header {
     border-color: var(--accent);
 }
 
-.category-item .delete-button,
-.category-item .edit-button,
 .category-item .save-rename-button,
 .category-item .cancel-rename-button {
     padding: 0.25rem;
@@ -452,14 +450,6 @@ header {
     background: transparent;
     cursor: pointer;
     border-radius: 4px;
-}
-
-.category-item .edit-button {
-    color: var(--accent);
-}
-
-.category-item .edit-button:hover {
-    background-color: rgba(105, 175, 222, 0.1);
 }
 
 .category-item .save-rename-button {
@@ -476,14 +466,6 @@ header {
 
 .category-item .cancel-rename-button:hover {
     background-color: rgba(255, 152, 0, 0.1);
-}
-
-.category-item .delete-button {
-    color: #f44336;
-}
-
-.category-item .delete-button:hover {
-    background-color: rgba(244, 67, 54, 0.1);
 }
 
 .category-input-container {

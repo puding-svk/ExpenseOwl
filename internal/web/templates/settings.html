@@ -166,7 +166,7 @@
                     <input type="number" id="recurringOccurrences" min="2" value="2" required>
                 </div>
                 <div class="form-group form-group-checkbox">
-                    <label for="recurringReportGain">Report Gain</label>
+                    <label for="recurringReportGain">Report Income</label>
                     <input type="checkbox" id="recurringReportGain" class="styled-checkbox">
                 </div>
                 <button type="submit" class="nav-button">Add Recurring Transaction</button>
@@ -232,7 +232,7 @@
                     <input type="number" id="editRecurringOccurrences" min="0" value="0" required>
                 </div>
                 <div class="form-group form-group-checkbox">
-                    <label for="editRecurringReportGain">Report Gain</label>
+                    <label for="editRecurringReportGain">Report Income</label>
                     <input type="checkbox" id="editRecurringReportGain" class="styled-checkbox">
                 </div>
             </form>
@@ -284,7 +284,7 @@
                     </div>
                     <div class="category-actions">
                         <button class="edit-button" id="edit-btn-${index}" onclick="startRenameCategory(${index})" data-tooltip="Rename">
-                            <i class="fa-solid fa-pen"></i>
+                            <i class="fa-solid fa-pen-to-square"></i>
                         </button>
                         <button class="save-rename-button" id="save-btn-${index}" onclick="saveRenameCategory(${index})" style="display:none;" data-tooltip="Save">
                             <i class="fa-solid fa-check"></i>
@@ -293,7 +293,7 @@
                             <i class="fa-solid fa-times"></i>
                         </button>
                         <button class="delete-button" id="delete-btn-${index}" onclick="removeCategory(${index})" data-tooltip="Delete">
-                            <i class="fa-solid fa-trash"></i>
+                            <i class="fa-solid fa-trash-can"></i>
                         </button>
                     </div>
                 `;
