@@ -283,7 +283,10 @@ header {
     color: var(--text-secondary);
 }
 
-.delete-button, .edit-button {
+.filter-button,
+.remove-filter, 
+.delete-button, 
+.edit-button {
     background: none;
     border: none;
     color: var(--text-secondary);
@@ -293,11 +296,15 @@ header {
     transition: all 0.2s;
 }
 
-.delete-button, .edit-button {
+.filter-button,
+.remove-filter, 
+.delete-button, 
+.edit-button {
     border-radius: 9999px;
     padding: 6px 10px;
 }
 
+.remove-filter:hover,
 .delete-button:hover {
     background-color: rgba(255, 99, 99, 0.1);
     color: #ff6b6b;
@@ -305,6 +312,11 @@ header {
 
 .edit-button:hover {
     background-color: rgba(105, 175, 222, 0.1);
+    color: var(--accent);
+}
+
+.filter-button:hover {
+    background-color: rgba(105, 222, 148, 0.1);
     color: var(--accent);
 }
 
@@ -407,6 +419,15 @@ header {
     border-radius: 9999px;
 }
 
+.filter-tag{
+    cursor: pointer;
+}
+
+.filter-tag:hover{
+    background-color: rgba(255, 99, 99, 0.1);
+}
+
+.filter-tag,
 .category-item {
     background-color: var(--bg-primary);
     border: 1px solid var(--border);
@@ -914,4 +935,11 @@ header {
 
 .table-controls label:hover {
     background-color: var(--accent);
+}
+
+.active-filters {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-left: 20px;
 }

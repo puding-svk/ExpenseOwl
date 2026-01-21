@@ -46,6 +46,7 @@
             <label for="showAllToggle">
                 <input type="checkbox" id="showAllToggle" class="styled-checkbox"> Show All Transactions
             </label>
+            <div id="activeFilters" class="active-filters"></div>
         </div>
 
         <div class="form-container">
@@ -123,6 +124,7 @@
         let startDate = 1;
         let allTags = new Set();
         let selectedTags = new Set();
+        let categoryFilter = null;
 
         function createTable(expenses) {
             if (!expenses || expenses.length === 0) {
@@ -159,6 +161,9 @@
                                     <button class="delete-button" onclick="handleDeleteClick(event, '${expense.id}')">
                                         <i class="fa-solid fa-trash-can"></i>
                                     </button>
+                                    <button class="filter-button" onclick="filterByCategory('${escapeHTML(expense.category)}')">
+                                        <i class="fa-solid fa-filter"></i>
+                                    </button>
                                 </td>
                             </tr>
                         `).join('')}
@@ -167,13 +172,44 @@
             `;
         }
 
+        function filterByCategory(category) {
+            categoryFilter = categoryFilter === category ? null : category;
+            updateTable();
+            updateActiveFilters();
+        }
+
+        function updateActiveFilters() {
+            const filtersContainer = document.getElementById('activeFilters');
+            if (categoryFilter) {
+                filtersContainer.innerHTML = `
+                    <div class="filter-tag" onclick="clearCategoryFilter()">
+                        Category: ${escapeHTML(categoryFilter)}
+                    </div>
+                `;
+            } else {
+                filtersContainer.innerHTML = '';
+            }
+        }
+
+        function clearCategoryFilter() {
+            categoryFilter = null;
+            updateTable();
+            updateActiveFilters();
+        }
+
         function updateTable() {
             const showAll = document.getElementById('showAllToggle').checked;
             document.querySelector('.month-navigation').style.display = showAll ? 'none' : 'flex';
 
-            expensesForTable = showAll
+            let expenses = showAll
                 ? allExpenses.slice().sort((a, b) => new Date(b.date) - new Date(a.date))
                 : getMonthExpenses(allExpenses);
+            
+            if (categoryFilter) {
+                expenses = expenses.filter(exp => exp.category === categoryFilter);
+            }
+            
+            expensesForTable = expenses;
             
             const tableContainer = document.getElementById('tableContainer');
             tableContainer.innerHTML = createTable(expensesForTable);
