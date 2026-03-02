@@ -419,6 +419,10 @@ header {
     border-radius: 9999px;
 }
 
+.category-cell {
+    cursor: pointer;
+}
+
 .filter-tag{
     cursor: pointer;
 }

@@ -252,6 +252,13 @@
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    onClick: (event, elements) => {
+                        if (elements.length > 0) {
+                            const elementIndex = elements[0].index;
+                            const category = categoryData[elementIndex].category;
+                            toggleExpenseForm(category, 'show');
+                        }
+                    },
                     plugins: {
                         legend: {
                             display: false
@@ -451,6 +458,25 @@
             });
         }
 
+        function toggleExpenseForm(category = null, action = null) {
+            const formContainer = document.getElementById('addExpenseContainer');
+            const toggleBtn = document.getElementById('toggleExpenseFormBtn');
+            const isHidden = formContainer.style.display === 'none' || formContainer.style.display === '';
+
+            if (action === 'show' || (action !== 'hide' && isHidden)) {
+                formContainer.style.display = 'block';
+                toggleBtn.innerHTML = '<i class="fa-solid fa-times"></i> Close';
+                
+                if (category) {
+                    const categorySelect = document.getElementById('category');
+                    categorySelect.value = category;
+                }
+            } else if (action === 'hide' || (action !== 'show' && !isHidden)) {
+                formContainer.style.display = 'none';
+                toggleBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Add Expense';
+            }
+        }
+
         document.getElementById('prevMonth').addEventListener('click', () => {
             currentDate.setMonth(currentDate.getMonth() - 1);
             updateMonthDisplay();
@@ -463,18 +489,7 @@
             updateChartAndLegend();
         });
 
-        document.getElementById('toggleExpenseFormBtn').addEventListener('click', function() {
-            const formContainer = document.getElementById('addExpenseContainer');
-            const isHidden = formContainer.style.display === 'none' || formContainer.style.display === '';
-
-            if (isHidden) {
-                formContainer.style.display = 'block';
-                this.innerHTML = '<i class="fa-solid fa-times"></i> Close';
-            } else {
-                formContainer.style.display = 'none';
-                this.innerHTML = '<i class="fa-solid fa-plus"></i> Add Expense';
-            }
-        });
+        document.getElementById('toggleExpenseFormBtn').addEventListener('click', toggleExpenseForm);
 
         document.getElementById('expenseForm').addEventListener('submit', async (e) => {
             e.preventDefault();

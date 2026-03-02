@@ -134,9 +134,11 @@ function getMonthBounds(date) {
 
 function getMonthExpenses(expenses) {
     const { start, end } = getMonthBounds(currentDate);
+    const now = new Date();
+    const effectiveEnd = end > now ? now : end;  // Clamp end to today
     return expenses.filter(exp => {
         const expDate = new Date(exp.date);
-        return expDate >= start && expDate <= end;
+        return expDate >= start && expDate <= effectiveEnd;
     }).sort((a, b) => new Date(b.date) - new Date(a.date));
 }
 

@@ -150,7 +150,9 @@
                         ${expenses.map((expense, index) => `
                             <tr>
                                 <td>${escapeHTML(expense.name)}</td>
-                                <td>${escapeHTML(expense.category)}</td>
+                                <td class="category-cell" onclick="filterByCategory('${escapeHTML(expense.category)}')">
+                                    ${escapeHTML(expense.category)}
+                                </td>
                                 ${hasTags ? `<td class="tags-column">${(expense.tags || []).map(escapeHTML).join(', ')}</td>` : ''}
                                 <td class="amount">${formatCurrency(expense.amount)}</td>
                                 <td class="date-column">${formatDateFromUTC(expense.date)}</td>
@@ -160,9 +162,6 @@
                                     </button>
                                     <button class="delete-button" onclick="handleDeleteClick(event, '${expense.id}')">
                                         <i class="fa-solid fa-trash-can"></i>
-                                    </button>
-                                    <button class="filter-button" onclick="filterByCategory('${escapeHTML(expense.category)}')">
-                                        <i class="fa-solid fa-filter"></i>
                                     </button>
                                 </td>
                             </tr>
