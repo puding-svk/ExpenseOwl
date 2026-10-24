@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/fa.min.css">
+    <link rel="stylesheet" href="/style.css">
+    <script>
+        (function() {
+            const theme = localStorage.getItem('theme') || 'system';
+            if (theme === 'light') {
+                document.documentElement.setAttribute('data-theme', 'light');
+            } else if (theme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+    </script>
+    <title>ExpenseOwl Auto-import</title>
+    <style>
+        .ai-status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; }
+        .ai-stat { background-color: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem; }
+        .ai-stat .label { font-size: 0.8rem; color: var(--text-secondary); }
+        .ai-stat .value { font-size: 1.35rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+        .ai-stat .sub { font-size: 0.8rem; color: var(--text-secondary); }
+        .ai-stat.total .value { color: var(--accent); }
+        .ai-toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; justify-content: center; margin: 1rem 0; }
+        .ai-toolbar select, .ai-toolbar input { padding: 0.45rem; border: 1px solid var(--border); border-radius: 4px; background-color: var(--bg-primary); color: var(--text-primary); }
+        .ai-toolbar .nav-button { font-size: 0.9rem; }
+        .ai-nowrap { white-space: nowrap; }
+        .ai-poller { text-align: center; color: var(--text-secondary); font-size: 0.9rem; margin-top: 1rem; }
+        .ai-poller .error { color: #EF4444; }
+        .ai-table-wrap { overflow-x: auto; }
+        .ai-table-wrap .expense-table td { vertical-align: top; }
+        .ai-term { display: inline-block; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem; background-color: var(--bg-primary); border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; margin: 1px 2px 1px 0; white-space: pre; }
+        .ai-term .sp { color: var(--text-secondary); opacity: 0.7; }
+        .ai-group { display: block; margin-bottom: 2px; }
+        .ai-muted { color: var(--text-secondary); font-size: 0.85rem; }
+        .ai-badge { display: inline-block; font-size: 0.75rem; padding: 0 8px; border-radius: 9999px; border: 1px solid var(--border); white-space: nowrap; }
+        .ai-badge.imported { color: #2EAB7D; border-color: #2EAB7D; }
+        .ai-badge.unmatched { color: #FFBE0B; border-color: #FFBE0B; }
+        .ai-badge.error { color: #EF4444; border-color: #EF4444; }
+        .ai-badge.income { color: #2EAB7D; border-color: #2EAB7D; }
+        .ai-disabled-row td { opacity: 0.45; }
+        .ai-amount { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+        .ai-actions { white-space: nowrap; text-align: right; }
+        .ai-actions button { padding: 4px 7px; }
+        .modal-content.wide { max-width: 860px; max-height: 90vh; overflow-y: auto; }
+        .ai-editor { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+        .ai-editor .full { grid-column: 1 / -1; }
+        .ai-editor textarea { padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; background-color: var(--bg-primary); color: var(--text-primary); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.9rem; min-height: 4.5rem; resize: vertical; }
+        .ai-editor .form-group label { align-self: flex-start; }
+        .ai-row-group { border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.5rem; display: flex; gap: 0.5rem; align-items: flex-start; }
+        .ai-row-group textarea { flex: 1; }
+        .ai-preview { min-height: 1.2rem; }
+        .ai-body { white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem; background-color: var(--bg-secondary); border-radius: 8px; padding: 1rem; max-height: 55vh; overflow: auto; }
+        .ai-notice { background-color: rgba(255, 190, 11, 0.1); color: #c99400; border-radius: 4px; padding: 0.5rem 0.75rem; margin: 0.5rem 0; font-size: 0.9rem; }
+        .ai-test-results { margin-top: 1rem; }
+        .ai-checkbox-line { display: flex; flex-direction: row; flex-wrap: wrap; align-items: center; gap: 0.5rem; }
+        .ai-checkbox-line label { align-self: center !important; }
+        @media (max-width: 700px) {
+            .settings-container { flex-direction: column; }
+            .ai-hide-sm { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="nav-bar">
+                <a href="/">
+                    <img src="/pwa/icon-192.png" alt="ExpenseOwl Logo" height="85" style="vertical-align: middle; margin-right: 20px;">
+                </a>
+                <a href="/" class="view-button" data-tooltip="Dashboard">
+                    <i class="fa-solid fa-chart-pie"></i>
+                </a>
+                <a href="/table" class="view-button" data-tooltip="Table View">
+                    <i class="fa-solid fa-table"></i>
+                </a>
+                <a href="/autoimport" class="view-button active" data-tooltip="Auto-import">
+                    <i class="fa-solid fa-envelope-open-text"></i>
+                </a>
+                <a href="/settings" class="view-button" data-tooltip="Settings">
+                    <i class="fa-solid fa-gear"></i>
+                </a>
+            </div>
+        </header>
+
+        <div id="unavailable" class="form-container" style="display: none;">
+            <h2 align="center">Auto-import unavailable</h2>
+            <p align="center">Bank e-mail auto-import needs the PostgreSQL storage backend (<code>STORAGE_TYPE=postgres</code>).</p>
+        </div>
+
+        <div id="page" style="display: none;">
+            <div class="form-container">
+                <h2 align="center">Balances</h2>
+                <div class="ai-status-grid">
+                    <div class="ai-stat total">
+                        <div class="label">Available after limits</div>
+                        <div class="value" id="totalValue">–</div>
+                        <div class="sub">sent in the balance e-mail</div>
+                    </div>
+                    <div class="ai-stat">
+                        <div class="label">Current account</div>
+                        <div class="value" id="buValue">–</div>
+                        <div class="sub" id="buUpdated"></div>
+                    </div>
+                    <div class="ai-stat">
+                        <div class="label">Credit card</div>
+                        <div class="value" id="kkValue">–</div>
+                        <div class="sub" id="kkUpdated"></div>
+                    </div>
+                </div>
+                <div class="ai-poller" id="pollerInfo"></div>
+                <div class="ai-toolbar">
+                    <button id="pollNow" class="nav-button"><i class="fa-solid fa-rotate"></i> Check mailbox now</button>
+                </div>
+            </div>
+
+            <div class="form-container">
+                <h2 align="center">Balance e-mail</h2>
+                <form id="settingsForm" class="expense-form">
+                    <div class="form-group">
+                        <label for="overdraftLimit">Current account overdraft</label>
+                        <input type="number" id="overdraftLimit" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="cardLimit">Credit card limit</label>
+                        <input type="number" id="cardLimit" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group form-group-checkbox">
+                        <label for="notifyEnabled">Send e-mail</label>
+                        <input type="checkbox" id="notifyEnabled" class="styled-checkbox">
+                    </div>
+                    <button type="submit" class="nav-button">Save</button>
+                </form>
+                <div class="form-help-text" id="notifyHelp"></div>
+                <div id="settingsMessage" class="form-message"></div>
+            </div>
+
+            <div class="form-container">
+                <h2 align="center">Rules</h2>
+                <p class="ai-muted" align="center">Rules are checked from top to bottom; the first one that matches a transaction e-mail and finds an amount creates the expense.</p>
+                <div class="ai-toolbar">
+                    <button id="addRule" class="nav-button"><i class="fa-solid fa-plus"></i> Add rule</button>
+                    <label for="legacyFile" class="nav-button"><i class="fa-solid fa-file-import"></i> Import known_transactions.json</label>
+                    <input type="file" id="legacyFile" accept=".json,application/json" style="display: none;">
+                    <input type="search" id="ruleFilter" placeholder="Filter rules">
+                </div>
+                <div id="rulesMessage" class="form-message"></div>
+                <div class="ai-table-wrap" id="rulesList"></div>
+            </div>
+
+            <div class="form-container">
+                <h2 align="center">Bank e-mails</h2>
+                <div class="ai-toolbar">
+                    <select id="logStatus">
+                        <option value="unmatched">Not imported (no rule)</option>
+                        <option value="imported">Imported</option>
+                        <option value="history">History (before auto-import)</option>
+                        <option value="error">Errors</option>
+                        <option value="">All</option>
+                    </select>
+                    <select id="logDays">
+                        <option value="7">Last 7 days</option>
+                        <option value="30" selected>Last 30 days</option>
+                        <option value="90">Last 90 days</option>
+                        <option value="180">Last 180 days</option>
+                    </select>
+                </div>
+                <div id="logMessage" class="form-message"></div>
+                <div class="ai-table-wrap" id="logList"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="ruleModal" class="modal">
+        <div class="modal-content wide">
+            <h3 id="ruleModalTitle">Add rule</h3>
+            <form id="ruleForm" class="ai-editor">
+                <div class="form-group">
+                    <label for="ruleName">Expense name</label>
+                    <input type="text" id="ruleName" required>
+                </div>
+                <div class="form-group">
+                    <label for="ruleCategory">Category</label>
+                    <select id="ruleCategory" required></select>
+                </div>
+                <div class="form-group">
+                    <label for="rulePreset">E-mail type</label>
+                    <select id="rulePreset">
+                        <option value="">Custom</option>
+                        <option value="account">Card payment from current account</option>
+                        <option value="card">Credit card purchase</option>
+                        <option value="credit">Incoming payment to current account</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="ruleMerchant">Text in "Popis transakcie"</label>
+                    <input type="text" id="ruleMerchant" placeholder="e.g. LIDL">
+                </div>
+                <div class="form-group ai-checkbox-line">
+                    <input type="checkbox" id="ruleIncome" class="styled-checkbox">
+                    <label for="ruleIncome">Income</label>
+                    <input type="checkbox" id="ruleEnabled" class="styled-checkbox" checked>
+                    <label for="ruleEnabled">Enabled</label>
+                </div>
+                <div class="form-group ai-checkbox-line" id="pairLine">
+                    <input type="checkbox" id="rulePair" class="styled-checkbox" checked>
+                    <label for="rulePair">Also add the same rule for the other card</label>
+                </div>
+
+                <div class="form-group full">
+                    <label for="ruleSubject">Subject contains (one term per line, all must match)</label>
+                    <textarea id="ruleSubject" spellcheck="false"></textarea>
+                    <div class="ai-preview" id="ruleSubjectPreview"></div>
+                </div>
+                <div class="form-group full">
+                    <label>Body rows: each box is a row that must contain all its terms (one per line)</label>
+                    <div id="ruleRowGroups"></div>
+                    <button type="button" id="addRowGroup" class="nav-button" style="align-self: flex-start;"><i class="fa-solid fa-plus"></i> Add row condition</button>
+                </div>
+                <div class="form-group">
+                    <label for="rulePrefix">Amount is after</label>
+                    <input type="text" id="rulePrefix" required spellcheck="false">
+                    <div class="ai-preview" id="rulePrefixPreview"></div>
+                </div>
+                <div class="form-group">
+                    <label for="rulePostfix">Amount is before</label>
+                    <input type="text" id="rulePostfix" required spellcheck="false">
+                    <div class="ai-preview" id="rulePostfixPreview"></div>
+                </div>
+                <p class="ai-muted full">Matching ignores case. Spaces at the start or end of a term count and are shown as <span class="ai-term"><span class="sp">␣</span></span>.</p>
+            </form>
+            <div id="ruleMessage" class="form-message"></div>
+            <div class="ai-test-results" id="ruleTestResults"></div>
+            <div class="modal-buttons">
+                <button class="modal-button" type="button" onclick="closeRuleModal()">Cancel</button>
+                <button class="modal-button" type="button" id="testRule"><i class="fa-solid fa-flask"></i> Test on recent e-mails</button>
+                <button class="modal-button confirm" type="button" id="saveRule" style="background-color: var(--accent); border-color: var(--accent);">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="bodyModal" class="modal">
+        <div class="modal-content wide">
+            <h3 id="bodyModalTitle"></h3>
+            <div class="ai-body" id="bodyModalText"></div>
+            <div class="modal-buttons">
+                <button class="modal-button" onclick="closeModal('bodyModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="deleteRuleModal" class="modal">
+        <div class="modal-content">
+            <h3>Delete rule</h3>
+            <p id="deleteRuleText"></p>
+            <div class="modal-buttons">
+                <button class="modal-button" onclick="closeModal('deleteRuleModal')">Cancel</button>
+                <button class="modal-button confirm" id="confirmDeleteRule">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/functions.js"></script>
+    <script>
+        let currentCurrency = "eur";
+        let categories = [];
+        let rules = [];
+        let logEntries = [];
+        let editingRule = null;   // rule being edited, null when adding
+        let lastTest = null;      // last test response for the open editor
+        let ruleToDelete = null;
+
+        const PRESETS = {
+            account: { subject: ['Debet na ucte'], keyword: 'Platba kartou', prefix: ' znizeny o ', postfix: ' EUR', income: false, pair: 'card' },
+            card:    { subject: ['debet na kreditnej karte'], keyword: 'nakup', prefix: ' vo vyske ', postfix: ' EUR', income: false, pair: 'account' },
+            credit:  { subject: ['Kredit na ucte'], keyword: '', prefix: ' zvyseny o ', postfix: ' EUR', income: true, pair: null },
+        };
+
+        // --- helpers ---
+        async function api(url, options = {}) {
+            const response = await fetch(url, options);
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) throw new Error(data.error || `Request failed (${response.status})`);
+            return data;
+        }
+
+        function showMessage(elementId, message, isSuccess) {
+            const div = document.getElementById(elementId);
+            div.textContent = message;
+            div.className = isSuccess ? 'form-message success' : 'form-message error';
+            setTimeout(() => { div.textContent = ''; div.className = 'form-message'; }, isSuccess ? 3000 : 6000);
+        }
+
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        function openModal(id) { document.getElementById(id).classList.add('active'); }
+
+        function money(v) { return formatCurrency(v); }
+
+        function shortDate(s) {
+            if (!s) return '';
+            const d = new Date(s);
+            return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) + ' ' +
+                d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function ago(s) {
+            if (!s || s.startsWith('0001')) return 'never';
+            const sec = Math.round((Date.now() - new Date(s)) / 1000);
+            if (sec < 60) return `${sec}s ago`;
+            if (sec < 3600) return `${Math.round(sec / 60)} min ago`;
+            if (sec < 86400) return `${Math.round(sec / 3600)} h ago`;
+            return shortDate(s);
+        }
+
+        // a term with its significant leading/trailing spaces made visible
+        function termHTML(t) {
+            const m = t.match(/^(\s*)(.*?)(\s*)$/s);
+            const sp = s => s ? `<span class="sp">${'␣'.repeat(s.length)}</span>` : '';
+            return `<span class="ai-term">${sp(m[1])}${escapeHTML(m[2])}${sp(m[3])}</span>`;
+        }
+
+        function linesToTerms(text) { return text.split('\n').map(t => t.replace(/\r/g, '')).filter(t => t.trim() !== ''); }
+
+        // --- status and settings ---
+        async function loadStatus() {
+            const s = await api('/autoimport/status');
+            if (!s.available) {
+                document.getElementById('unavailable').style.display = '';
+                return false;
+            }
+            document.getElementById('page').style.display = '';
+            document.getElementById('totalValue').textContent = s.totalKnown ? money(s.total) : '–';
+            for (const acc of ['bu', 'kk']) {
+                const b = (s.balances || []).find(x => x.account === acc);
+                document.getElementById(acc + 'Value').textContent = b ? money(b.balance) : '–';
+                document.getElementById(acc + 'Updated').textContent = b ? 'updated ' + ago(b.updatedAt) : 'no e-mail yet';
+            }
+            const p = s.poller;
+            const info = document.getElementById('pollerInfo');
+            const help = document.getElementById('notifyHelp');
+            document.getElementById('pollNow').style.display = p ? '' : 'none';
+            if (!p) {
+                info.innerHTML = 'The mailbox poller is <b>off</b> (TB_IMPORT_ENABLED is not set). Rules can still be edited and applied to logged e-mails.';
+                help.textContent = '';
+            } else {
+                info.innerHTML = `Checking label <b>${escapeHTML(p.mailbox)}</b> every ${escapeHTML(p.interval)} · last check ${ago(p.lastPoll)}` +
+                    (p.lastCount ? ` (${p.lastCount} new)` : '') +
+                    (p.lastError ? `<br><span class="error"><i class="fa-solid fa-triangle-exclamation"></i> ${escapeHTML(p.lastError)}</span>` : '');
+                help.textContent = (p.notifyTo && p.notifyTo.length)
+                    ? `Sent to ${p.notifyTo.join(', ')} when a balance e-mail arrives` + (p.lastNotify && !p.lastNotify.startsWith('0001') ? ` · last sent ${ago(p.lastNotify)}` : '')
+                    : 'No recipients configured (TB_NOTIFY_TO).';
+            }
+            if (!document.getElementById('settingsForm').dataset.loaded) {
+                document.getElementById('overdraftLimit').value = s.settings.overdraftLimit;
+                document.getElementById('cardLimit').value = s.settings.cardLimit;
+                document.getElementById('notifyEnabled').checked = s.settings.notifyEnabled;
+                document.getElementById('settingsForm').dataset.loaded = '1';
+            }
+            return true;
+        }
+
+        async function saveSettings(e) {
+            e.preventDefault();
+            try {
+                await api('/autoimport/settings/edit', {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        overdraftLimit: parseFloat(document.getElementById('overdraftLimit').value),
+                        cardLimit: parseFloat(document.getElementById('cardLimit').value),
+                        notifyEnabled: document.getElementById('notifyEnabled').checked,
+                    }),
+                });
+                showMessage('settingsMessage', 'Settings saved', true);
+                loadStatus();
+            } catch (err) { showMessage('settingsMessage', err.message, false); }
+        }
+
+        async function pollNow() {
+            try {
+                await api('/autoimport/poll', { method: 'POST' });
+                setTimeout(refreshAll, 4000);
+            } catch (err) { alert(err.message); }
+        }
+
+        // --- rules ---
+        async function loadRules() {
+            rules = await api('/autoimport/rules');
+            renderRules();
+        }
+
+        function conditionsHTML(r) {
+            let html = '';
+            if (r.subjectContains.length) html += `<span class="ai-group"><span class="ai-muted">subject</span> ${r.subjectContains.map(termHTML).join('')}</span>`;
+            for (const g of r.rowConditions) html += `<span class="ai-group"><span class="ai-muted">row</span> ${g.map(termHTML).join('')}</span>`;
+            return html;
+        }
+
+        function renderRules() {
+            const list = document.getElementById('rulesList');
+            const q = document.getElementById('ruleFilter').value.trim().toLowerCase();
+            const shown = rules.filter(r => !q || JSON.stringify([r.name, r.category, r.subjectContains, r.rowConditions]).toLowerCase().includes(q));
+            if (!rules.length) {
+                list.innerHTML = '<p align="center">No rules yet. Add one, or import the old known_transactions.json.</p>';
+                return;
+            }
+            list.innerHTML = `
+                <table class="expense-table">
+                    <thead><tr><th>#</th><th>Name</th><th>Category</th><th class="ai-hide-sm">Conditions</th><th class="ai-hide-sm">Amount between</th><th></th></tr></thead>
+                    <tbody>
+                    ${shown.map(r => {
+                        const idx = rules.indexOf(r);
+                        return `
+                        <tr class="${r.enabled ? '' : 'ai-disabled-row'}">
+                            <td class="ai-muted">${idx + 1}</td>
+                            <td>${escapeHTML(r.name)} ${r.income ? '<span class="ai-badge income">income</span>' : ''} ${r.enabled ? '' : '<span class="ai-badge">off</span>'}</td>
+                            <td>${escapeHTML(r.category)}</td>
+                            <td class="ai-hide-sm">${conditionsHTML(r)}</td>
+                            <td class="ai-hide-sm ai-nowrap">${termHTML(r.amountPrefix)} … ${termHTML(r.amountPostfix)}</td>
+                            <td class="ai-actions">
+                                <button class="edit-button" title="Move up" onclick="moveRule(${idx}, -1)" ${idx === 0 || q ? 'disabled' : ''}><i class="fa-solid fa-arrow-up"></i></button>
+                                <button class="edit-button" title="Move down" onclick="moveRule(${idx}, 1)" ${idx === rules.length - 1 || q ? 'disabled' : ''}><i class="fa-solid fa-arrow-down"></i></button>
+                                <button class="edit-button" title="Edit" onclick="openRuleEditor(rules[${idx}])"><i class="fa-solid fa-pen-to-square"></i></button>
+                                <button class="edit-button" title="Duplicate" onclick="duplicateRule(${idx})"><i class="fa-solid fa-copy"></i></button>
+                                <button class="delete-button" title="Delete" onclick="askDeleteRule(${idx})"><i class="fa-solid fa-trash-can"></i></button>
+                            </td>
+                        </tr>`;
+                    }).join('')}
+                    </tbody>
+                </table>`;
+        }
+
+        async function moveRule(idx, delta) {
+            const target = idx + delta;
+            if (target < 0 || target >= rules.length) return;
+            [rules[idx], rules[target]] = [rules[target], rules[idx]];
+            renderRules();
+            try {
+                await api('/autoimport/rules/reorder', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rules.map(r => r.id)) });
+            } catch (err) { showMessage('rulesMessage', err.message, false); loadRules(); }
+        }
+
+        function duplicateRule(idx) {
+            const copy = JSON.parse(JSON.stringify(rules[idx]));
+            delete copy.id;
+            openRuleEditor(null, copy);
+        }
+
+        function askDeleteRule(idx) {
+            ruleToDelete = rules[idx];
+            document.getElementById('deleteRuleText').textContent = `Delete rule "${ruleToDelete.name}" (${ruleToDelete.category})? Expenses it already created are kept.`;
+            openModal('deleteRuleModal');
+        }
+
+        async function confirmDeleteRule() {
+            try {
+                await api(`/autoimport/rule/delete?id=${encodeURIComponent(ruleToDelete.id)}`, { method: 'DELETE' });
+                closeModal('deleteRuleModal');
+                showMessage('rulesMessage', 'Rule deleted', true);
+                loadRules();
+            } catch (err) { alert(err.message); }
+        }
+
+        async function importLegacy(e) {
+            const file = e.target.files[0];
+            e.target.value = '';
+            if (!file) return;
+            if (rules.length && !confirm(`Append the rules from ${file.name} to the ${rules.length} existing rules?`)) return;
+            try {
+                const res = await api('/autoimport/rules/import', { method: 'POST', body: await file.text() });
+                showMessage('rulesMessage', `Imported ${res.imported} rules`, true);
+                loadRules();
+            } catch (err) { showMessage('rulesMessage', err.message, false); }
+        }
+
+        // --- rule editor ---
+        function populateCategorySelect(selected) {
+            const sel = document.getElementById('ruleCategory');
+            const opts = [...categories];
+            if (selected && !opts.includes(selected)) opts.push(selected);
+            sel.innerHTML = opts.map(c => `<option value="${escapeHTML(c)}" ${c === selected ? 'selected' : ''}>${escapeHTML(c)}</option>`).join('');
+        }
+
+        function addRowGroup(terms = []) {
+            const wrap = document.createElement('div');
+            wrap.className = 'ai-row-group';
+            wrap.innerHTML = `<textarea spellcheck="false" placeholder="Popis transakcie&#10;Platba kartou&#10;LIDL"></textarea>
+                <button type="button" class="delete-button" title="Remove"><i class="fa-solid fa-xmark"></i></button>`;
+            wrap.querySelector('textarea').value = terms.join('\n');
+            wrap.querySelector('textarea').addEventListener('input', clearTest);
+            wrap.querySelector('button').onclick = () => { wrap.remove(); clearTest(); };
+            document.getElementById('ruleRowGroups').appendChild(wrap);
+        }
+
+        function updatePreviews() {
+            document.getElementById('ruleSubjectPreview').innerHTML = linesToTerms(document.getElementById('ruleSubject').value).map(termHTML).join('');
+            for (const id of ['rulePrefix', 'rulePostfix']) {
+                const v = document.getElementById(id).value;
+                document.getElementById(id + 'Preview').innerHTML = v ? termHTML(v) : '';
+            }
+        }
+
+        function clearTest() { lastTest = null; document.getElementById('ruleTestResults').innerHTML = ''; updatePreviews(); }
+
+        function detectPreset(r) {
+            for (const [key, p] of Object.entries(PRESETS)) {
+                if (r.amountPrefix === p.prefix && r.subjectContains.length === 1 &&
+                    r.subjectContains[0].toLowerCase().startsWith(p.subject[0].toLowerCase().slice(0, 8))) return key;
+            }
+            return '';
+        }
+
+        // applies the preset to subject, prefix/postfix and the description row
+        function applyPreset() {
+            const key = document.getElementById('rulePreset').value;
+            const p = PRESETS[key];
+            document.getElementById('pairLine').style.display = (!editingRule && p && p.pair) ? '' : 'none';
+            if (!p) return;
+            document.getElementById('ruleSubject').value = p.subject.join('\n');
+            document.getElementById('rulePrefix').value = p.prefix;
+            document.getElementById('rulePostfix').value = p.postfix;
+            document.getElementById('ruleIncome').checked = p.income;
+            syncMerchantRow();
+        }
+
+        // keeps the "Popis transakcie" row group in step with the merchant field
+        function syncMerchantRow() {
+            const key = document.getElementById('rulePreset').value;
+            const p = PRESETS[key];
+            const merchant = document.getElementById('ruleMerchant').value;
+            if (!p || !merchant.trim()) { clearTest(); return; }
+            const terms = ['Popis transakcie', ...(p.keyword ? [p.keyword] : []), merchant];
+            const groups = document.querySelectorAll('#ruleRowGroups .ai-row-group textarea');
+            const existing = [...groups].find(t => t.value.toLowerCase().startsWith('popis transakcie'));
+            if (existing) existing.value = terms.join('\n'); else addRowGroup(terms);
+            clearTest();
+        }
+
+        function openRuleEditor(rule, draft) {
+            editingRule = rule;
+            const r = rule || draft || { enabled: true, name: '', category: categories[0] || '', income: false, subjectContains: [], rowConditions: [], amountPrefix: '', amountPostfix: '' };
+            document.getElementById('ruleModalTitle').textContent = rule ? `Edit rule "${rule.name}"` : 'Add rule';
+            document.getElementById('ruleName').value = r.name;
+            populateCategorySelect(r.category);
+            document.getElementById('ruleIncome').checked = r.income;
+            document.getElementById('ruleEnabled').checked = r.enabled;
+            document.getElementById('ruleSubject').value = r.subjectContains.join('\n');
+            document.getElementById('ruleRowGroups').innerHTML = '';
+            r.rowConditions.forEach(g => addRowGroup(g));
+            document.getElementById('rulePrefix').value = r.amountPrefix;
+            document.getElementById('rulePostfix').value = r.amountPostfix;
+            const preset = r.preset !== undefined ? r.preset : detectPreset(r);
+            document.getElementById('rulePreset').value = preset;
+            document.getElementById('ruleMerchant').value = r.merchant || '';
+            document.getElementById('pairLine').style.display = (!rule && PRESETS[preset] && PRESETS[preset].pair) ? '' : 'none';
+            document.getElementById('rulePair').checked = true;
+            if (draft && draft.merchant) syncMerchantRow();
+            if (!r.rowConditions.length && !(draft && draft.merchant)) addRowGroup();
+            clearTest();
+            openModal('ruleModal');
+            document.getElementById('ruleName').focus();
+        }
+
+        function closeRuleModal() { closeModal('ruleModal'); editingRule = null; }
+
+        function ruleFromForm() {
+            return {
+                id: editingRule ? editingRule.id : '',
+                enabled: document.getElementById('ruleEnabled').checked,
+                name: document.getElementById('ruleName').value.trim(),
+                category: document.getElementById('ruleCategory').value,
+                income: document.getElementById('ruleIncome').checked,
+                subjectContains: linesToTerms(document.getElementById('ruleSubject').value),
+                rowConditions: [...document.querySelectorAll('#ruleRowGroups textarea')].map(t => linesToTerms(t.value)).filter(g => g.length),
+                amountPrefix: document.getElementById('rulePrefix').value,
+                amountPostfix: document.getElementById('rulePostfix').value,
+            };
+        }
+
+        // the same rule for the other card, built from the merchant field
+        function pairedRule(rule) {
+            const key = document.getElementById('rulePreset').value;
+            const merchant = document.getElementById('ruleMerchant').value;
+            if (editingRule || !document.getElementById('rulePair').checked || !PRESETS[key] || !PRESETS[key].pair || !merchant.trim()) return null;
+            const p = PRESETS[PRESETS[key].pair];
+            return { ...rule, id: '', subjectContains: [...p.subject], amountPrefix: p.prefix, amountPostfix: p.postfix,
+                rowConditions: [['Popis transakcie', p.keyword, merchant]] };
+        }
+
+        async function testRule() {
+            const rule = ruleFromForm();
+            const box = document.getElementById('ruleTestResults');
+            box.innerHTML = '<p class="ai-muted">Testing…</p>';
+            try {
+                lastTest = await api('/autoimport/rules/test?days=90', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rule) });
+                renderTest();
+            } catch (err) { box.innerHTML = ''; showMessage('ruleMessage', err.message, false); }
+        }
+
+        function renderTest() {
+            const box = document.getElementById('ruleTestResults');
+            const res = lastTest.results;
+            if (!res.length) {
+                box.innerHTML = `<p class="ai-notice">No e-mail among the ${lastTest.scanned} logged in the last 90 days matches these conditions.</p>`;
+                return;
+            }
+            const noAmount = res.filter(r => !r.amount).length;
+            const pending = res.filter(r => r.wouldImport).length;
+            box.innerHTML = `
+                <p class="ai-muted">${res.length} of ${lastTest.scanned} logged e-mails match` +
+                (noAmount ? ` · <b>${noAmount} without an amount</b> (check "Amount is after/before")` : '') +
+                (pending ? ` · ${pending} not imported yet` : '') + `</p>
+                <div class="ai-table-wrap"><table class="expense-table">
+                    <thead><tr><th>Date</th><th>Description</th><th class="ai-amount">Amount</th><th>Now</th></tr></thead>
+                    <tbody>${res.map(r => `
+                        <tr>
+                            <td class="date-column">${shortDate(r.entry.receivedAt)}</td>
+                            <td>${escapeHTML(r.entry.description || r.entry.subject)}</td>
+                            <td class="ai-amount">${r.amount ? money(r.amount) : '<span class="ai-badge error">none</span>'}</td>
+                            <td>${statusBadge(r.entry)}${r.shadowedBy ? ` <span class="ai-muted">earlier rule "${escapeHTML(r.shadowedBy)}" wins</span>` : ''}</td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table></div>`;
+        }
+
+        async function saveRule() {
+            const rule = ruleFromForm();
+            const pair = pairedRule(rule);
+            try {
+                let saved;
+                if (editingRule) {
+                    saved = await api(`/autoimport/rule/edit?id=${encodeURIComponent(editingRule.id)}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rule) });
+                } else {
+                    saved = await api('/autoimport/rule', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rule) });
+                    if (pair) await api('/autoimport/rule', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(pair) });
+                }
+                await loadRules();
+                // offer to import the e-mails the new rule(s) would have caught
+                const candidates = await pendingFor([saved, ...(pair ? [pair] : [])]);
+                closeRuleModal();
+                showMessage('rulesMessage', `Rule${pair ? 's' : ''} saved`, true);
+                if (candidates.length && confirm(`${candidates.length} logged e-mail(s) not imported yet match ${pair ? 'these rules' : 'this rule'}. Import them now?\n\nOnly do this for e-mails the old checker did not already add.`)) {
+                    await applyRules(candidates);
+                }
+            } catch (err) { showMessage('ruleMessage', err.message, false); }
+        }
+
+        async function pendingFor(rulesToCheck) {
+            const ids = new Set();
+            for (const r of rulesToCheck) {
+                const res = await api('/autoimport/rules/test?days=90', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(r) }).catch(() => ({ results: [] }));
+                res.results.filter(x => x.wouldImport && x.entry.status === 'unmatched').forEach(x => ids.add(x.entry.id));
+            }
+            return [...ids];
+        }
+
+        // --- log ---
+        function statusBadge(e) {
+            const labels = { imported: 'imported', unmatched: 'no rule', history: 'history', balance: 'balance', ignored: 'ignored', pending: 'pending', error: 'error' };
+            return `<span class="ai-badge ${e.status}">${labels[e.status] || e.status}</span>`;
+        }
+
+        async function loadLog() {
+            const status = document.getElementById('logStatus').value;
+            const days = document.getElementById('logDays').value;
+            logEntries = await api(`/autoimport/log?status=${encodeURIComponent(status)}&days=${days}&limit=500`);
+            renderLog();
+        }
+
+        function renderLog() {
+            const list = document.getElementById('logList');
+            const status = document.getElementById('logStatus').value;
+            if (!logEntries.length) {
+                list.innerHTML = `<p align="center">${status === 'unmatched' ? 'Every transaction e-mail in this period was imported by a rule.' : 'No e-mails.'}</p>`;
+                return;
+            }
+            const applicable = logEntries.filter(e => e.status === 'unmatched').length;
+            list.innerHTML = `
+                ${status === 'history' ? '<p class="ai-notice">History e-mails arrived before auto-import started; the old checker may already have added them. Applying rules to them can create duplicates.</p>' : ''}
+                ${applicable ? `<div class="ai-toolbar"><button class="nav-button" onclick="applyRules(logEntries.filter(e => e.status === 'unmatched').map(e => e.id))"><i class="fa-solid fa-wand-magic-sparkles"></i> Apply current rules to ${applicable} e-mail(s)</button></div>` : ''}
+                <table class="expense-table">
+                    <thead><tr><th>Date</th><th>Description</th><th class="ai-amount">Amount</th><th>Status</th><th></th></tr></thead>
+                    <tbody>${logEntries.map((e, idx) => `
+                        <tr>
+                            <td class="date-column">${shortDate(e.receivedAt)}</td>
+                            <td>${escapeHTML(e.description || e.subject)}${e.description ? `<br><span class="ai-muted">${escapeHTML(e.subject.replace(/\s*\(ID=.*\)$/, ''))}</span>` : ''}${e.note ? `<br><span class="ai-muted">${escapeHTML(e.note)}</span>` : ''}</td>
+                            <td class="ai-amount">${e.amount ? (e.kind === 'credit' ? '+' : '−') + money(e.amount) : ''}</td>
+                            <td>${statusBadge(e)}${e.ruleName ? `<br><span class="ai-muted">${escapeHTML(e.ruleName)}</span>` : ''}</td>
+                            <td class="ai-actions">
+                                <button class="edit-button" title="Show e-mail" onclick="showBody(${idx})"><i class="fa-solid fa-eye"></i></button>
+                                ${['unmatched', 'history'].includes(e.status) && ['debit', 'credit'].includes(e.kind) ? `<button class="edit-button" title="Create rule from this e-mail" onclick="ruleFromEntry(${idx})"><i class="fa-solid fa-plus"></i></button>` : ''}
+                                ${['unmatched', 'history'].includes(e.status) ? `<button class="edit-button" title="Apply current rules" onclick="applyRules([${e.id}], ${e.status === 'history'})"><i class="fa-solid fa-wand-magic-sparkles"></i></button>` : ''}
+                            </td>
+                        </tr>`).join('')}
+                    </tbody>
+                </table>`;
+        }
+
+        function showBody(idx) {
+            const e = logEntries[idx];
+            document.getElementById('bodyModalTitle').textContent = e.subject;
+            document.getElementById('bodyModalText').textContent = e.body;
+            openModal('bodyModal');
+        }
+
+        // guesses the merchant from "Popis transakcie"
+        function merchantFrom(e) {
+            const d = (e.description || '').replace(/\.$/, '');
+            const name = /^platba kartou/i.test(d) ? (d.split(',').slice(1).join(',') || '') : d.split(',')[0];
+            // drop the shop number so the rule matches every branch ("BILLA 292" -> "BILLA")
+            return name.trim().replace(/(\s+\d+)+$/, '');
+        }
+
+        function ruleFromEntry(idx) {
+            const e = logEntries[idx];
+            const subject = e.subject.toLowerCase();
+            let preset = '';
+            if (subject.startsWith('debet na ucte') && /platba kartou/i.test(e.description)) preset = 'account';
+            else if (subject.startsWith('debet na kreditnej karte')) preset = 'card';
+            else if (subject.startsWith('kredit na ucte')) preset = 'credit';
+            const merchant = preset ? merchantFrom(e) : '';
+            const name = merchant.split(/\s+/).slice(0, 2).join(' ');
+            const p = PRESETS[preset];
+            openRuleEditor(null, {
+                enabled: true, name: name ? name.charAt(0).toUpperCase() + name.slice(1).toLowerCase() : '',
+                category: categories[0] || '', income: p ? p.income : e.kind === 'credit',
+                subjectContains: p ? [...p.subject] : [e.subject.replace(/\s*\(ID=.*\)$/, '')],
+                rowConditions: [], amountPrefix: p ? p.prefix : '', amountPostfix: p ? p.postfix : ' EUR',
+                preset, merchant,
+            });
+        }
+
+        async function applyRules(ids, isHistory) {
+            if (isHistory && !confirm('This e-mail arrived before auto-import started, so the old checker may already have added it. Import it anyway?')) return;
+            try {
+                const res = await api('/autoimport/log/apply', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(ids) });
+                const n = res.imported.length;
+                showMessage('logMessage', n ? `Imported ${n} expense(s): ${res.imported.map(e => e.ruleName).join(', ')}` : 'No rule matches these e-mails', n > 0);
+                loadLog();
+            } catch (err) { showMessage('logMessage', err.message, false); }
+        }
+
+        async function refreshAll() {
+            try {
+                if (!await loadStatus()) return;
+                await Promise.all([loadRules(), loadLog()]);
+            } catch (err) { console.error(err); }
+        }
+
+        async function initialize() {
+            try {
+                const config = await api('/config');
+                currentCurrency = config.currency;
+                categories = config.categories;
+            } catch (err) { console.error(err); }
+            document.getElementById('settingsForm').addEventListener('submit', saveSettings);
+            document.getElementById('pollNow').addEventListener('click', pollNow);
+            document.getElementById('addRule').addEventListener('click', () => openRuleEditor(null));
+            document.getElementById('legacyFile').addEventListener('change', importLegacy);
+            document.getElementById('ruleFilter').addEventListener('input', renderRules);
+            document.getElementById('addRowGroup').addEventListener('click', () => addRowGroup());
+            document.getElementById('rulePreset').addEventListener('change', applyPreset);
+            document.getElementById('ruleMerchant').addEventListener('input', syncMerchantRow);
+            for (const id of ['ruleSubject', 'rulePrefix', 'rulePostfix']) document.getElementById(id).addEventListener('input', clearTest);
+            document.getElementById('testRule').addEventListener('click', testRule);
+            document.getElementById('saveRule').addEventListener('click', saveRule);
+            document.getElementById('confirmDeleteRule').addEventListener('click', confirmDeleteRule);
+            document.getElementById('logStatus').addEventListener('change', loadLog);
+            document.getElementById('logDays').addEventListener('change', loadLog);
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal.active').forEach(m => m.classList.remove('active')); });
+            await refreshAll();
+            setInterval(loadStatus, 30000);
+        }
+
+        document.addEventListener('DOMContentLoaded', initialize);
+    </script>
+</body>
+</html>

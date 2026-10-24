@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -8,6 +9,7 @@ import (
 
 	"github.com/tanq16/expenseowl/internal/api"
 	"github.com/tanq16/expenseowl/internal/storage"
+	"github.com/tanq16/expenseowl/internal/tbimport"
 	"github.com/tanq16/expenseowl/internal/web"
 )
 
@@ -20,6 +22,7 @@ func runServer(port int) {
 	}
 	defer storage.Close()
 	handler := api.NewHandler(storage)
+	importer := startImporter(storage)
 
 	// Version Handler
 	http.HandleFunc("/version", func(w http.ResponseWriter, r *http.Request) {
@@ -88,10 +91,31 @@ func runServer(port int) {
 	http.HandleFunc("/import/csv", handler.ImportCSV)
 	http.HandleFunc("/import/csvold", handler.ImportOldCSV)
 
+	// Bank e-mail auto-import
+	api.NewAutoImportHandler(storage, importer).Register(http.DefaultServeMux)
+
 	log.Println("Starting server on port", port, "...")
 	if err := http.ListenAndServe(fmt.Sprint(":", port), nil); err != nil {
 		log.Fatalf("Server failed to start: %v", err)
 	}
+}
+
+// startImporter starts the mailbox poller when TB_IMPORT_ENABLED=true.
+func startImporter(s storage.Storage) *tbimport.Importer {
+	cfg, enabled, err := tbimport.ConfigFromEnv()
+	if err != nil {
+		log.Fatalf("Invalid auto-import configuration: %v", err)
+	}
+	if !enabled {
+		return nil
+	}
+	ai, ok := s.(storage.AutoImportStore)
+	if !ok {
+		log.Fatalf("Auto-import requires STORAGE_TYPE=postgres")
+	}
+	importer := tbimport.NewImporter(cfg, s, ai)
+	go importer.Run(context.Background())
+	return importer
 }
 
 func main() {

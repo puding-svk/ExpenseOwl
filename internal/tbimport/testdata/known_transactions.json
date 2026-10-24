@@ -1,0 +1,533 @@
+[
+  {
+    "name": "Lidl",
+    "category": "Potraviny",
+    "filter": [
+      {
+        "subj_contains": [
+          "Debet na"
+        ]
+      },
+      {
+        "row_contains": [
+          "Popis transakcie",
+          "Platba kartou",
+          "Lidl"
+        ]
+      }
+    ],
+    "amount_prefix": " znizeny o ",
+    "amount_postfix": " EUR"
+  },
+  {
+    "name": "Lidl",
+    "category": "Potraviny",
+    "filter": [
+      {
+        "subj_contains": [
+          "debet na kreditnej karte"
+        ]
+      },
+      {
+        "row_contains": [
+          "Popis transakcie",
+          "nakup",
+          "Lidl"
+        ]
+      }
+    ],
+    "amount_prefix": " vo vyske ",
+    "amount_postfix": " EUR"
+  },
+  {
+    "name": "Billa",
+    "category": "Potraviny",
+    "filter": [
+      {
+        "subj_contains": [
+          "Debet na"
+        ]
+      },
+      {
+        "row_contains": [
+          "Popis transakcie",
+          "Platba kartou",
+          "Billa"
+        ]
+      }
+    ],
+    "amount_prefix": " znizeny o ",
+    "amount_postfix": " EUR"
+  },
+  {
+    "name": "Billa",
+    "category": "Potraviny",
+    "filter": [
+      {
+        "subj_contains": [
+          "debet na kreditnej karte"
+        ]
+      },
+      {
+        "row_contains": [
+          "Popis transakcie",
+          "nakup",
+          "Billa"
+        ]
+      }
+    ],
+    "amount_prefix": " vo vyske ",
+    "amount_postfix": " EUR"
+  },
+  {
+    "name": "Tesco",
+    "category": "Potraviny",
+    "filter": [
+      {
+        "subj_contains": [
+          "Debet na"
+        ]
+      },
+      {
+        "row_contains": [
+          "Popis transakcie",
+          "Platba kartou",
+          "Tesco"
+        ]
+      }
+    ],
+    "amount_prefix": " znizeny o ",
+    "amount_postfix": " EUR"
+  },
+  {
+    "name": "Tesco",
+    "category": "Potraviny",
+    "filter": [
+      {
+        "subj_contains": [
+          "debet na kreditnej karte"
+        ]
+      },
+      {
+        "row_contains": [
+          "Popis transakcie",
+          "nakup",
+          "Tesco"
+        ]
+      }
+    ],
+    "amount_prefix": " vo vyske ",
+    "amount_postfix": " EUR"
+  },
+  {
+    "name": "Deichmann",
+    "category": "Oblecenie",
+    "filter": [
+      {
+        "subj_contains": [
+          "Debet na"
+        ]
+      },
+      {
+        "row_contains": [
+          "Popis transakcie",
+          "Platba kartou",
+          "DEICHMANN"
+        ]
+      }
+    ],
+    "amount_prefix": " znizeny o ",
+    "amount_postfix": " EUR"
+  },
+  {
+    "name": "Deichmann",
+    "category": "Oblecenie",
+    "filter": [
+      {
+        "subj_contains": [
+          "debet na kreditnej karte"
+        ]
+      },
+      {
+        "row_contains": [
+          "Popis transakcie",
+          "nakup",
+          "DEICHMANN"
+        ]
+      }
+    ],
+    "amount_prefix": " vo vyske ",
+    "amount_postfix": " EUR"
+  },
+  {
+    "name": "Aliexpres",
+    "category": "Domacnost",
+    "filter": [
+      {
+        "subj_contains": [
+          "Debet na"
+        ]
+      },
+      {
+        "row_contains": [
+          "Popis transakcie",
+          "Platba kartou",
+          "ALIEXPRESS"
+        ]
+      }
+    ],
+    "amount_prefix": " znizeny o ",
+    "amount_postfix": " EUR"
+  },
+  {
+    "name": "Aliexpres",
+    "category": "Domacnost",
+    "filter": [
+      {
+        "subj_contains": [
+          "debet na kreditnej karte"
+        ]
+      },
+      {
+        "row_contains": [
+          "Popis transakcie",
+          "nakup",
+          "ALIEXPRESS"
+        ]
+      }
+    ],
+    "amount_prefix": " vo vyske ",
+    "amount_postfix": " EUR"
+  },
+  {
+    "name": "Pharmacy One",
+    "category": "Zdravie",
+    "filter": [
+      {
+        "subj_contains": [
+          "Debet na"
+        ]
+      },
+      {
+        "row_contains": [
+          "Popis transakcie",
+          "Platba kartou",
+          "PHARMACY ONE"
+        ]
+      }
+    ],
+    "amount_prefix": " znizeny o ",
+    "amount_postfix": " EUR"
+  },
+  {
+    "name": "Pharmacy One",
+    "category": "Zdravie",
+    "filter": [
+      {
+        "subj_contains": [
+          "debet na kreditnej karte"
+        ]
+      },
+      {
+        "row_contains": [
+          "Popis transakcie",
+          "nakup",
+          "PHARMACY ONE"
+        ]
+      }
+    ],
+    "amount_prefix": " vo vyske ",
+    "amount_postfix": " EUR"
+  },
+  {
+    "name": "Lekaren",
+    "category": "Zdravie",
+    "filter": [
+      {
+        "subj_contains": [
+          "Debet na"
+        ]
+      },
+      {
+        "row_contains": [
+          "Popis transakcie",
+          "Platba kartou",
+          "PHARMACY TWO, s.r.o"
+        ]
+      }
+    ],
+    "amount_prefix": " znizeny o ",
+    "amount_postfix": " EUR"
+  },
+  {
+    "name": "Lekaren",
+    "category": "Zdravie",
+    "filter": [
+      {
+        "subj_contains": [
+          "debet na kreditnej karte"
+        ]
+      },
+      {
+        "row_contains": [
+          "Popis transakcie",
+          "nakup",
+          "PHARMACY TWO, s.r.o"
+        ]
+      }
+    ],
+    "amount_prefix": " vo vyske ",
+    "amount_postfix": " EUR"
+  },
+  {
+    "name": "Lekaren",
+    "category": "Zdravie",
+    "filter": [
+      {
+        "subj_contains": [
+          "Debet na"
+        ]
+      },
+      {
+        "row_contains": [
+          "Popis transakcie",
+          "Platba kartou",
+          "lekaren"
+        ]
+      }
+    ],
+    "amount_prefix": " znizeny o ",
+    "amount_postfix": " EUR"
+  },
+  {
+    "name": "Lekaren",
+    "category": "Zdravie",
+    "filter": [
+      {
+        "subj_contains": [
+          "debet na kreditnej karte"
+        ]
+      },
+      {
+        "row_contains": [
+          "Popis transakcie",
+          "nakup",
+          "lekaren"
+        ]
+      }
+    ],
+    "amount_prefix": " vo vyske ",
+    "amount_postfix": " EUR"
+  },
+  {
+    "name": "Salary",
+    "category": "Vyplata",
+    "filter": [
+      {
+        "subj_contains": [
+          "Kredit na"
+        ]
+      },
+      {
+        "row_contains": [
+          "Informacia pre prijemcu",
+          "mzda"
+        ]
+      },
+      {
+        "row_contains": [
+          "Ucet protistrany",
+          "ACME"
+        ]
+      }
+    ],
+    "amount_prefix": " zvyseny o ",
+    "amount_postfix": " EUR",
+    "income": true
+  },
+  {
+    "name": "Benzin Shell",
+    "category": "Auto",
+    "filter": [
+      {
+        "subj_contains": [
+          "Debet na"
+        ]
+      },
+      {
+        "row_contains": [
+          "Popis transakcie",
+          "Platba kartou",
+          " SHELL "
+        ]
+      }
+    ],
+    "amount_prefix": " znizeny o ",
+    "amount_postfix": " EUR"
+  },
+  {
+    "name": "Benzin Shell",
+    "category": "Auto",
+    "filter": [
+      {
+        "subj_contains": [
+          "debet na kreditnej karte"
+        ]
+      },
+      {
+        "row_contains": [
+          "Popis transakcie",
+          "nakup",
+          "SHELL"
+        ]
+      }
+    ],
+    "amount_prefix": " vo vyske ",
+    "amount_postfix": " EUR"
+  },
+  {
+    "name": "Benzin Slovnaft",
+    "category": "Auto",
+    "filter": [
+      {
+        "subj_contains": [
+          "Debet na"
+        ]
+      },
+      {
+        "row_contains": [
+          "Popis transakcie",
+          "Platba kartou",
+          "SLOVNAFT"
+        ]
+      }
+    ],
+    "amount_prefix": " znizeny o ",
+    "amount_postfix": " EUR"
+  },
+  {
+    "name": "Benzin Slovnaft",
+    "category": "Auto",
+    "filter": [
+      {
+        "subj_contains": [
+          "debet na kreditnej karte"
+        ]
+      },
+      {
+        "row_contains": [
+          "Popis transakcie",
+          "nakup",
+          "SLOVNAFT"
+        ]
+      }
+    ],
+    "amount_prefix": " vo vyske ",
+    "amount_postfix": " EUR"
+  },
+  {
+    "name": "DMka",
+    "category": "Potraviny",
+    "filter": [
+      {
+        "subj_contains": [
+          "Debet na"
+        ]
+      },
+      {
+        "row_contains": [
+          "Popis transakcie",
+          "Platba kartou",
+          " DM "
+        ]
+      }
+    ],
+    "amount_prefix": " znizeny o ",
+    "amount_postfix": " EUR"
+  },
+  {
+    "name": "DMka",
+    "category": "Potraviny",
+    "filter": [
+      {
+        "subj_contains": [
+          "debet na kreditnej karte"
+        ]
+      },
+      {
+        "row_contains": [
+          "Popis transakcie",
+          "nakup",
+          " DM "
+        ]
+      }
+    ],
+    "amount_prefix": " vo vyske ",
+    "amount_postfix": " EUR"
+  },
+  {
+    "name": "Phone bill",
+    "category": "Ucty telefon byvanie",
+    "filter": [
+      {
+        "subj_contains": [
+          "Debet na"
+        ]
+      },
+      {
+        "row_contains": [
+          "Referencia platitela",
+          "SS1234567890"
+        ]
+      },
+      {
+        "row_contains": [
+          "Ucet protistrany",
+          "PHONE OPERATOR"
+        ]
+      }
+    ],
+    "amount_prefix": " znizeny o ",
+    "amount_postfix": " EUR"
+  },
+  {
+    "name": "Organic shop",
+    "category": "Potraviny",
+    "filter": [
+      {
+        "subj_contains": [
+          "Debet na"
+        ]
+      },
+      {
+        "row_contains": [
+          "Popis transakcie",
+          "Platba kartou",
+          "ORGANIC SHOP,"
+        ]
+      }
+    ],
+    "amount_prefix": " znizeny o ",
+    "amount_postfix": " EUR"
+  },
+  {
+    "name": "Organic shop",
+    "category": "Potraviny",
+    "filter": [
+      {
+        "subj_contains": [
+          "debet na kreditnej karte"
+        ]
+      },
+      {
+        "row_contains": [
+          "Popis transakcie",
+          "nakup",
+          "ORGANIC SHOP"
+        ]
+      }
+    ],
+    "amount_prefix": " vo vyske ",
+    "amount_postfix": " EUR"
+  }
+]

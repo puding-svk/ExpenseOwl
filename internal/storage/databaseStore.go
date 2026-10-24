@@ -76,7 +76,8 @@ func makeDBURL(baseConfig SystemConfig) string {
 }
 
 func createTables(db *sql.DB) error {
-	for _, query := range []string{createExpensesTableSQL, createRecurringExpensesTableSQL, createConfigTableSQL} {
+	queries := append([]string{createExpensesTableSQL, createRecurringExpensesTableSQL, createConfigTableSQL}, autoImportTables...)
+	for _, query := range queries {
 		if _, err := db.Exec(query); err != nil {
 			return err
 		}

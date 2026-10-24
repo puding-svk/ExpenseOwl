@@ -30,6 +30,9 @@
                 <a href="/table" class="view-button" data-tooltip="Table View">
                     <i class="fa-solid fa-table"></i>
                 </a>
+                <a href="/autoimport" class="view-button" data-tooltip="Auto-import">
+                    <i class="fa-solid fa-envelope-open-text"></i>
+                </a>
                 <a href="/settings" class="view-button active" data-tooltip="Settings">
                     <i class="fa-solid fa-gear"></i>
                 </a>
@@ -37,7 +40,7 @@
         </header>
 
         <div class="info-field">
-            Version: <a href="https://github.com/tanq16/expenseowl/releases/latest" target="_blank" rel="noopener noreferrer">v4.0</a>
+            Version: <a id="version-link" href="https://github.com/puding-svk/ExpenseOwl" target="_blank" rel="noopener noreferrer">dev</a>
             <span class="separator">|</span>
             <a href="https://github.com/tanq16/expenseowl/blob/main/README.md" target="_blank" rel="noopener noreferrer">Documentation</a>
             <span class="separator">|</span>
@@ -890,7 +893,7 @@
                 fetch('/version').then(r => r.ok ? r.text() : 'dev').then(version => {
                     const link = document.getElementById('version-link');
                     link.textContent = version;
-                    if (version !== 'dev') link.href = `https://github.com/tanq16/expenseowl/releases/tag/${version}`;
+                    if (version !== 'dev') link.href = `https://hub.docker.com/r/puding/expenseowl/tags?name=${encodeURIComponent(version)}`;
                 }).catch(e => console.error('Failed to fetch version:', e));
 
             } catch (error) {

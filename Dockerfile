@@ -5,7 +5,8 @@ WORKDIR /app
 COPY . .
 
 # Build the application
-RUN go build -o expenseowl ./cmd/expenseowl
+ARG VERSION=dev
+RUN go build -ldflags "-X main.version=${VERSION}" -o expenseowl ./cmd/expenseowl
 
 # Use a minimal alpine image for running
 FROM alpine:latest
