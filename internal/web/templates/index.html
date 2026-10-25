@@ -64,6 +64,7 @@
 
         <div id="addExpenseContainer" style="display: none;">
             <div class="form-container">
+                <div id="emailDraftInfo" class="email-draft-info" style="display: none;"></div>
                 <form id="expenseForm" class="expense-form">
                     <div class="form-group">
                         <label for="amount">Amount</label>
@@ -508,9 +509,13 @@
                 date: getISODateWithLocalTime(document.getElementById('date').value),
                 tags: Array.from(selectedTags)
             };
+            const fromDraft = emailDraft;
+            if (fromDraft && document.getElementById('date').value === localDateString(fromDraft.date)) {
+                formData.date = fromDraft.date; // keep the transaction time from the e-mail
+            }
             try {
-                const response = await fetch('/expense', {
-                    method: 'PUT',
+                const response = await fetch(fromDraft ? `/autoimport/log/expense?id=${fromDraft.entryID}` : '/expense', {
+                    method: fromDraft ? 'POST' : 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(formData)
                 });
@@ -518,6 +523,7 @@
                 if (response.ok) {
                     messageDiv.textContent = 'Expense added successfully!';
                     messageDiv.className = 'form-message success';
+                    if (fromDraft) finishEmailDraft(messageDiv);
                     document.getElementById('expenseForm').reset();
                     document.getElementById('selected-tags').innerHTML = '';
                     selectedTags.clear();
@@ -535,7 +541,7 @@
                 setTimeout(() => {
                     messageDiv.textContent = '';
                     messageDiv.className = 'form-message';
-                }, 3000);
+                }, fromDraft ? 15000 : 3000);
             } catch (error) {
                 console.error('Error adding expense:', error);
                 const messageDiv = document.getElementById('formMessage');
@@ -543,7 +549,60 @@
                 messageDiv.className = 'form-message error';
             }
         });
-        document.addEventListener('DOMContentLoaded', initialize);
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initialize();
+            await loadEmailDraft();
+        });
+
+        // --- Prefill from a bank e-mail (/?fromEmail=<log id>, opened from /autoimport) ---
+        let emailDraft = null;
+
+        function localDateString(iso) {
+            const d = new Date(iso);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
+        async function loadEmailDraft() {
+            const id = new URLSearchParams(window.location.search).get('fromEmail');
+            if (!id) return;
+            const info = document.getElementById('emailDraftInfo');
+            info.style.display = 'block';
+            toggleExpenseForm(null, 'show');
+            let draft;
+            try {
+                const response = await fetch(`/autoimport/log/draft?id=${encodeURIComponent(id)}`);
+                draft = await response.json();
+                if (!response.ok) throw new Error(draft.error || 'Failed to load the e-mail');
+            } catch (error) {
+                info.innerHTML = `<span class="email-draft-error">${escapeHTML(error.message)}</span>`;
+                return;
+            }
+            const when = new Date(draft.date).toLocaleString(undefined, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+            const amount = (draft.income ? '+' : '−') + formatCurrency(draft.amount);
+            let html = `<i class="fa-solid fa-envelope-open-text"></i> From bank e-mail ${escapeHTML(when)} · ${escapeHTML(draft.description || draft.subject)} · ${escapeHTML(amount)}` +
+                ` · <a href="/autoimport">bank e-mails</a>`;
+            if (!draft.addable) {
+                info.innerHTML = html + `<br><span class="email-draft-error">${escapeHTML(draft.reason)}</span>`;
+                return;
+            }
+            if (draft.warning) html += `<br><span class="email-draft-warning">${escapeHTML(draft.warning)}</span>`;
+            info.innerHTML = html;
+            emailDraft = draft;
+            document.getElementById('amount').value = draft.amount ? draft.amount.toFixed(2) : '';
+            document.getElementById('reportGain').checked = draft.income;
+            document.getElementById('name').value = draft.name || '-';
+            document.getElementById('date').value = localDateString(draft.date);
+            const categorySelect = document.getElementById('category');
+            categorySelect.value = [...categorySelect.options].some(o => o.value === draft.category) ? draft.category : '';
+            (categorySelect.value ? document.getElementById('name') : categorySelect).focus();
+        }
+
+        function finishEmailDraft(messageDiv) {
+            emailDraft = null;
+            history.replaceState(null, '', window.location.pathname);
+            document.getElementById('emailDraftInfo').style.display = 'none';
+            messageDiv.innerHTML = 'Expense added and the bank e-mail marked as added. <a href="/autoimport">Back to bank e-mails</a>';
+        }
 
         document.getElementById('name').addEventListener('click', (e) => {
             if (e.target.value === '-') {

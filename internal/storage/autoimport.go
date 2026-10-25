@@ -71,6 +71,7 @@ type ImportCursor struct {
 
 const (
 	ImportStatusImported  = "imported"  // expense created by a rule
+	ImportStatusManual    = "manual"    // expense added by hand from this e-mail
 	ImportStatusUnmatched = "unmatched" // transaction, no rule matched
 	ImportStatusBalance   = "balance"   // balance-only notification
 	ImportStatusIgnored   = "ignored"   // not a transaction notification

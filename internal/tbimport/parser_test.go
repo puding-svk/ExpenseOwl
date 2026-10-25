@@ -185,7 +185,7 @@ func TestKind(t *testing.T) {
 		&msgAccountDebit: "debit", &msgCardDebit: "debit", &msgAccountCredit: "credit",
 		&msgStatement: "statement", &msgSavings: "credit",
 		{Subject: "Uhrada dlznej sumy na kreditnej karte (ID=1)"}: "credit",
-		{Subject: "Newsletter"}:                                    "other",
+		{Subject: "Newsletter"}:                                   "other",
 	} {
 		if got := Kind(*msg); got != want {
 			t.Errorf("%q: got %s, want %s", msg.Subject, got, want)

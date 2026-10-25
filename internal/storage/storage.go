@@ -1,6 +1,7 @@
 package storage
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"regexp"
@@ -148,6 +149,9 @@ func InitializeStorage() (Storage, error) {
 	}
 	return nil, fmt.Errorf("invalid data store: %s", baseConfig.StorageType)
 }
+
+// ErrNotFound is wrapped by lookups of a missing record.
+var ErrNotFound = errors.New("not found")
 
 var REInvalidChars *regexp.Regexp = regexp.MustCompile(`[^\p{L}\p{N}\s.,\-'_!"]`)
 var RERepeatingSpaces *regexp.Regexp = regexp.MustCompile(`\s+`)

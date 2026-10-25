@@ -947,3 +947,17 @@ header {
     flex-wrap: wrap;
     margin-left: 20px;
 }
+
+/* Prefill from a bank e-mail (auto-import) */
+.email-draft-info {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    background-color: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 1rem;
+}
+.email-draft-info a, .form-message a { color: var(--accent); }
+.email-draft-warning { color: #c99400; }
+.email-draft-error { color: #EF4444; }

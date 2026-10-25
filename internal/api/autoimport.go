@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"log"
 	"net/http"
@@ -39,6 +40,8 @@ func (h *AutoImportHandler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("/autoimport/rule/delete", h.DeleteRule)
 	mux.HandleFunc("/autoimport/log", h.GetLog)
 	mux.HandleFunc("/autoimport/log/apply", h.ApplyRules)
+	mux.HandleFunc("/autoimport/log/draft", h.GetDraft)
+	mux.HandleFunc("/autoimport/log/expense", h.AddExpenseFromEntry)
 }
 
 // requires checks the method and that the backend supports auto-import.
@@ -369,4 +372,66 @@ func (h *AutoImportHandler) ApplyRules(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"imported": imported})
+}
+
+func idParam(w http.ResponseWriter, r *http.Request) (int64, bool) {
+	id, err := strconv.ParseInt(r.URL.Query().Get("id"), 10, 64)
+	if err != nil {
+		writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "ID parameter is required"})
+		return 0, false
+	}
+	return id, true
+}
+
+// GetDraft returns the prefill for adding an expense from a logged e-mail.
+func (h *AutoImportHandler) GetDraft(w http.ResponseWriter, r *http.Request) {
+	if !h.requires(w, r, http.MethodGet) {
+		return
+	}
+	id, ok := idParam(w, r)
+	if !ok {
+		return
+	}
+	draft, err := tbimport.BuildDraft(h.storage, h.ai, id)
+	if errors.Is(err, storage.ErrNotFound) {
+		writeJSON(w, http.StatusNotFound, ErrorResponse{Error: "Bank e-mail not found"})
+		return
+	}
+	if err != nil {
+		internalError(w, "build expense draft", err)
+		return
+	}
+	writeJSON(w, http.StatusOK, draft)
+}
+
+// AddExpenseFromEntry adds the expense from the dashboard form and links it
+// to the logged e-mail in one step.
+func (h *AutoImportHandler) AddExpenseFromEntry(w http.ResponseWriter, r *http.Request) {
+	if !h.requires(w, r, http.MethodPost) {
+		return
+	}
+	id, ok := idParam(w, r)
+	if !ok {
+		return
+	}
+	var expense storage.Expense
+	if err := json.NewDecoder(r.Body).Decode(&expense); err != nil {
+		writeJSON(w, http.StatusBadRequest, ErrorResponse{Error: "Invalid request body"})
+		return
+	}
+	entry, err := tbimport.AddManualExpense(h.storage, h.ai, id, expense)
+	if errors.Is(err, storage.ErrNotFound) {
+		writeJSON(w, http.StatusNotFound, ErrorResponse{Error: "Bank e-mail not found"})
+		return
+	}
+	if tbimport.IsNotAddable(err) {
+		writeJSON(w, http.StatusConflict, ErrorResponse{Error: err.Error()})
+		return
+	}
+	if err != nil {
+		internalError(w, "add expense from e-mail", err)
+		return
+	}
+	entry.Body = ""
+	writeJSON(w, http.StatusOK, entry)
 }

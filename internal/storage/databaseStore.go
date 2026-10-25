@@ -247,7 +247,7 @@ func (s *databaseStore) GetExpense(id string) (Expense, error) {
 	expense, err := scanExpense(s.db.QueryRow(query, id))
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return Expense{}, fmt.Errorf("expense with ID %s not found", id)
+			return Expense{}, fmt.Errorf("expense with ID %s %w", id, ErrNotFound)
 		}
 		return Expense{}, fmt.Errorf("failed to get expense: %v", err)
 	}
@@ -299,7 +299,7 @@ func (s *databaseStore) UpdateExpense(id string, expense Expense) error {
 		return fmt.Errorf("failed to get rows affected: %v", err)
 	}
 	if rowsAffected == 0 {
-		return fmt.Errorf("expense with ID %s not found", id)
+		return fmt.Errorf("expense with ID %s %w", id, ErrNotFound)
 	}
 	return nil
 }
@@ -315,7 +315,7 @@ func (s *databaseStore) RemoveExpense(id string) error {
 		return fmt.Errorf("failed to get rows affected: %v", err)
 	}
 	if rowsAffected == 0 {
-		return fmt.Errorf("expense with ID %s not found", id)
+		return fmt.Errorf("expense with ID %s %w", id, ErrNotFound)
 	}
 	return nil
 }

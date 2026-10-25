@@ -36,7 +36,7 @@
         .ai-group { display: block; margin-bottom: 2px; }
         .ai-muted { color: var(--text-secondary); font-size: 0.85rem; }
         .ai-badge { display: inline-block; font-size: 0.75rem; padding: 0 8px; border-radius: 9999px; border: 1px solid var(--border); white-space: nowrap; }
-        .ai-badge.imported { color: #2EAB7D; border-color: #2EAB7D; }
+        .ai-badge.imported, .ai-badge.manual { color: #2EAB7D; border-color: #2EAB7D; }
         .ai-badge.unmatched { color: #FFBE0B; border-color: #FFBE0B; }
         .ai-badge.error { color: #EF4444; border-color: #EF4444; }
         .ai-badge.income { color: #2EAB7D; border-color: #2EAB7D; }
@@ -156,6 +156,7 @@
                     <select id="logStatus">
                         <option value="unmatched">Not imported (no rule)</option>
                         <option value="imported">Imported</option>
+                        <option value="manual">Added manually</option>
                         <option value="history">History (before auto-import)</option>
                         <option value="error">Errors</option>
                         <option value="">All</option>
@@ -657,7 +658,7 @@
 
         // --- log ---
         function statusBadge(e) {
-            const labels = { imported: 'imported', unmatched: 'no rule', history: 'history', balance: 'balance', ignored: 'ignored', pending: 'pending', error: 'error' };
+            const labels = { imported: 'imported', manual: 'added manually', unmatched: 'no rule', history: 'history', balance: 'balance', ignored: 'ignored', pending: 'pending', error: 'error' };
             return `<span class="ai-badge ${e.status}">${labels[e.status] || e.status}</span>`;
         }
 
@@ -689,6 +690,7 @@
                             <td>${statusBadge(e)}${e.ruleName ? `<br><span class="ai-muted">${escapeHTML(e.ruleName)}</span>` : ''}</td>
                             <td class="ai-actions">
                                 <button class="edit-button" title="Show e-mail" onclick="showBody(${idx})"><i class="fa-solid fa-eye"></i></button>
+                                ${['unmatched', 'history'].includes(e.status) && ['debit', 'credit'].includes(e.kind) ? `<a class="edit-button" title="Add as expense" href="/?fromEmail=${e.id}"><i class="fa-solid fa-receipt"></i></a>` : ''}
                                 ${['unmatched', 'history'].includes(e.status) && ['debit', 'credit'].includes(e.kind) ? `<button class="edit-button" title="Create rule from this e-mail" onclick="ruleFromEntry(${idx})"><i class="fa-solid fa-plus"></i></button>` : ''}
                                 ${['unmatched', 'history'].includes(e.status) ? `<button class="edit-button" title="Apply current rules" onclick="applyRules([${e.id}], ${e.status === 'history'})"><i class="fa-solid fa-wand-magic-sparkles"></i></button>` : ''}
                             </td>
@@ -704,22 +706,16 @@
             openModal('bodyModal');
         }
 
-        // guesses the merchant from "Popis transakcie"
-        function merchantFrom(e) {
-            const d = (e.description || '').replace(/\.$/, '');
-            const name = /^platba kartou/i.test(d) ? (d.split(',').slice(1).join(',') || '') : d.split(',')[0];
-            // drop the shop number so the rule matches every branch ("BILLA 292" -> "BILLA")
-            return name.trim().replace(/(\s+\d+)+$/, '');
-        }
-
-        function ruleFromEntry(idx) {
+        async function ruleFromEntry(idx) {
             const e = logEntries[idx];
+            let draft = {};
+            try { draft = await api(`/autoimport/log/draft?id=${e.id}`); } catch (err) { console.error(err); }
             const subject = e.subject.toLowerCase();
             let preset = '';
             if (subject.startsWith('debet na ucte') && /platba kartou/i.test(e.description)) preset = 'account';
             else if (subject.startsWith('debet na kreditnej karte')) preset = 'card';
             else if (subject.startsWith('kredit na ucte')) preset = 'credit';
-            const merchant = preset ? merchantFrom(e) : '';
+            const merchant = preset ? (draft.merchant || '') : '';
             const name = merchant.split(/\s+/).slice(0, 2).join(' ');
             const p = PRESETS[preset];
             openRuleEditor(null, {

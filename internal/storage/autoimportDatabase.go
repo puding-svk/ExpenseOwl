@@ -324,7 +324,7 @@ func (s *databaseStore) GetImportLogEntries(filter ImportLogFilter) ([]ImportLog
 func (s *databaseStore) GetImportLogEntry(id int64) (ImportLogEntry, error) {
 	e, err := scanImportLogEntry(s.db.QueryRow(`SELECT `+importLogColumns+` FROM import_log WHERE id = $1`, id))
 	if err == sql.ErrNoRows {
-		return e, fmt.Errorf("import log entry %d not found", id)
+		return e, fmt.Errorf("import log entry %d %w", id, ErrNotFound)
 	}
 	return e, err
 }

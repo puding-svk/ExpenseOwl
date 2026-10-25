@@ -352,7 +352,7 @@ func (s *jsonStore) GetExpense(id string) (Expense, error) {
 			return data.Expenses[i], nil
 		}
 	}
-	return Expense{}, fmt.Errorf("expense with ID %s not found", id)
+	return Expense{}, fmt.Errorf("expense with ID %s %w", id, ErrNotFound)
 }
 
 func (s *jsonStore) AddExpense(expense Expense) error {
@@ -394,7 +394,7 @@ func (s *jsonStore) RemoveExpense(id string) error {
 	}
 	if !found {
 		log.Printf("Expense with ID %s not found\n", id)
-		return fmt.Errorf("expense with ID %s not found", id)
+		return fmt.Errorf("expense with ID %s %w", id, ErrNotFound)
 	}
 	log.Printf("Deleted expense with ID %s\n", id)
 	data.Expenses = newExpenses
@@ -465,7 +465,7 @@ func (s *jsonStore) UpdateExpense(id string, expense Expense) error {
 	}
 	if !found {
 		log.Printf("expense with ID %s not found\n", id)
-		return fmt.Errorf("expense with ID %s not found", id)
+		return fmt.Errorf("expense with ID %s %w", id, ErrNotFound)
 	}
 	log.Printf("Edited expense with ID %s\n", id)
 	return s.writeExpensesFile(s.filePath, data)
