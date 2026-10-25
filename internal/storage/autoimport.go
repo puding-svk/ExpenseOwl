@@ -2,6 +2,7 @@ package storage
 
 import (
 	"fmt"
+	"net/mail"
 	"strings"
 	"time"
 )
@@ -52,9 +53,10 @@ type ImportRule struct {
 }
 
 type ImportSettings struct {
-	NotifyEnabled  bool    `json:"notifyEnabled"`
-	CardLimit      float64 `json:"cardLimit"`      // subtracted from the credit card available balance
-	OverdraftLimit float64 `json:"overdraftLimit"` // subtracted from the current account available balance
+	NotifyEnabled  bool     `json:"notifyEnabled"`
+	NotifyTo       []string `json:"notifyTo"`       // nil until set; seeded from TB_NOTIFY_TO
+	CardLimit      float64  `json:"cardLimit"`      // subtracted from the credit card available balance
+	OverdraftLimit float64  `json:"overdraftLimit"` // subtracted from the current account available balance
 }
 
 type ImportBalance struct {
@@ -146,9 +148,33 @@ func cleanTerms(terms []string) []string {
 	return cleaned
 }
 
+const maxNotifyRecipients = 10
+
 func (s *ImportSettings) Validate() error {
 	if s.CardLimit < 0 || s.OverdraftLimit < 0 {
 		return fmt.Errorf("limits cannot be negative")
 	}
+	recipients := []string{} // never nil once saved, so the seed is not applied again
+	seen := map[string]bool{}
+	for _, r := range s.NotifyTo {
+		if strings.TrimSpace(r) == "" {
+			continue
+		}
+		addr, err := mail.ParseAddress(strings.TrimSpace(r))
+		if err != nil {
+			return fmt.Errorf("invalid e-mail address %q", strings.TrimSpace(r))
+		}
+		if key := strings.ToLower(addr.Address); !seen[key] {
+			seen[key] = true
+			recipients = append(recipients, addr.Address)
+		}
+	}
+	if len(recipients) > maxNotifyRecipients {
+		return fmt.Errorf("at most %d recipients", maxNotifyRecipients)
+	}
+	if s.NotifyEnabled && len(recipients) == 0 {
+		return fmt.Errorf("add at least one recipient, or switch the balance e-mail off")
+	}
+	s.NotifyTo = recipients
 	return nil
 }

@@ -185,3 +185,39 @@ func TestAddManualExpenseConcurrent(t *testing.T) {
 		t.Errorf("concurrent adds: %d succeeded, %d expenses; want exactly one new expense", ok, len(f.expenses))
 	}
 }
+
+// settings store for the recipient seeding
+type settingsStore struct {
+	storage.AutoImportStore
+	settings storage.ImportSettings
+	saves    int
+}
+
+func (s *settingsStore) GetImportSettings() (storage.ImportSettings, error) { return s.settings, nil }
+func (s *settingsStore) UpdateImportSettings(v storage.ImportSettings) error {
+	s.settings = v
+	s.saves++
+	return nil
+}
+
+func TestSeedRecipients(t *testing.T) {
+	seed := []string{"a@example.com", "b@example.com"}
+	// existing deployment: settings saved before recipients existed
+	s := &settingsStore{settings: storage.ImportSettings{NotifyEnabled: true, CardLimit: 5500, OverdraftLimit: 3500}}
+	if err := seedRecipients(s, seed); err != nil {
+		t.Fatal(err)
+	}
+	if len(s.settings.NotifyTo) != 2 || s.settings.CardLimit != 5500 || !s.settings.NotifyEnabled || s.saves != 1 {
+		t.Errorf("seed: got %+v after %d saves", s.settings, s.saves)
+	}
+	// later starts keep what was edited on the page, even an empty list
+	s.settings.NotifyTo = []string{}
+	if err := seedRecipients(s, seed); err != nil || len(s.settings.NotifyTo) != 0 || s.saves != 1 {
+		t.Errorf("re-seed must not overwrite: %v %+v saves=%d", err, s.settings, s.saves)
+	}
+	// no TB_NOTIFY_TO: nothing to do
+	s2 := &settingsStore{}
+	if err := seedRecipients(s2, nil); err != nil || s2.saves != 0 {
+		t.Errorf("empty seed: %v saves=%d", err, s2.saves)
+	}
+}

@@ -29,7 +29,7 @@ type Config struct {
 	MarkSeen      bool
 	SMTPAddr      string
 	NotifyFrom    string
-	NotifyTo      []string
+	NotifyTo      []string // seeds the recipients in the settings on first start
 	BackfillDays  int
 	RetentionDays int
 }
@@ -94,7 +94,7 @@ type Status struct {
 	Mailbox     string    `json:"mailbox"`
 	Interval    string    `json:"interval"`
 	MarkSeen    bool      `json:"markSeen"`
-	NotifyTo    []string  `json:"notifyTo"`
+	NotifyFrom  string    `json:"notifyFrom"`
 	LastPoll    time.Time `json:"lastPoll"`
 	LastSuccess time.Time `json:"lastSuccess"`
 	LastError   string    `json:"lastError"`
@@ -125,7 +125,7 @@ func NewImporter(cfg Config, store storage.Storage, ai storage.AutoImportStore) 
 		trigger: make(chan struct{}, 1),
 		status: Status{
 			Running: true, Mailbox: cfg.Mailbox, Interval: cfg.Interval.String(),
-			MarkSeen: cfg.MarkSeen, NotifyTo: cfg.NotifyTo,
+			MarkSeen: cfg.MarkSeen, NotifyFrom: cfg.NotifyFrom,
 		},
 	}
 }
@@ -146,6 +146,9 @@ func (i *Importer) PollNow() {
 
 func (i *Importer) Run(ctx context.Context) {
 	log.Printf("TB import: polling mailbox %q every %s", i.cfg.Mailbox, i.cfg.Interval)
+	if err := seedRecipients(i.ai, i.cfg.NotifyTo); err != nil {
+		log.Printf("TB import ERROR: failed to seed balance e-mail recipients: %v", err)
+	}
 	ticker := time.NewTicker(i.cfg.Interval)
 	defer ticker.Stop()
 	for {
@@ -415,14 +418,14 @@ func (i *Importer) notify() {
 		log.Printf("TB import ERROR: failed to load settings: %v", err)
 		return
 	}
-	if !settings.NotifyEnabled || len(i.cfg.NotifyTo) == 0 {
+	if !settings.NotifyEnabled || len(settings.NotifyTo) == 0 {
 		return
 	}
 	total, ok, err := Total(i.ai, settings)
 	if err != nil || !ok {
 		return
 	}
-	if err := i.sendMail(fmt.Sprintf("%.2f EUR", total)); err != nil {
+	if err := i.sendMail(settings.NotifyTo, fmt.Sprintf("%.2f EUR", total)); err != nil {
 		log.Printf("TB import ERROR: failed to send notification: %v", err)
 		return
 	}
@@ -454,17 +457,35 @@ func Total(ai storage.AutoImportStore, settings storage.ImportSettings) (float64
 	return float64(int64(total*100+sign(total)*0.5)) / 100, true, nil
 }
 
-func (i *Importer) sendMail(body string) error {
+// seedRecipients copies TB_NOTIFY_TO into the settings once, so the
+// recipients can be edited on the page afterwards.
+func seedRecipients(ai storage.AutoImportStore, seed []string) error {
+	settings, err := ai.GetImportSettings()
+	if err != nil {
+		return err
+	}
+	if settings.NotifyTo != nil || len(seed) == 0 {
+		return nil
+	}
+	settings.NotifyTo = seed
+	if err := settings.Validate(); err != nil {
+		return err
+	}
+	log.Printf("TB import: balance e-mail recipients initialized from TB_NOTIFY_TO (%d)", len(settings.NotifyTo))
+	return ai.UpdateImportSettings(settings)
+}
+
+func (i *Importer) sendMail(to []string, body string) error {
 	host, _, err := net.SplitHostPort(i.cfg.SMTPAddr)
 	if err != nil {
 		return err
 	}
 	msg := "From: " + i.cfg.NotifyFrom + "\r\n" +
-		"To: " + strings.Join(i.cfg.NotifyTo, ",") + "\r\n" +
+		"To: " + strings.Join(to, ",") + "\r\n" +
 		"Subject: Celkovy zostatok na ucte\r\n" +
 		"MIME-Version: 1.0\r\n" +
 		"Content-Type: text/plain; charset=utf-8\r\n" +
 		"Date: " + time.Now().Format(time.RFC1123Z) + "\r\n\r\n" + body + "\r\n"
 	auth := smtp.PlainAuth("", i.cfg.User, i.cfg.Pass, host)
-	return smtp.SendMail(i.cfg.SMTPAddr, auth, i.cfg.NotifyFrom, i.cfg.NotifyTo, []byte(msg))
+	return smtp.SendMail(i.cfg.SMTPAddr, auth, i.cfg.NotifyFrom, to, []byte(msg))
 }
