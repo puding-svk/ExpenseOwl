@@ -961,3 +961,31 @@ header {
 .email-draft-info a, .form-message a { color: var(--accent); }
 .email-draft-warning { color: #c99400; }
 .email-draft-error { color: #EF4444; }
+
+/* Prominent "Add Expense" buttons: the dashboard toggle (while the form is
+   closed) and the form's submit button */
+#expenseForm .add-expense-submit,
+#toggleExpenseFormBtn.add-expense-cta {
+    background-color: #1f8a5f;
+    border-color: #1f8a5f;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 1.05rem;
+    padding: 1rem 1.5rem;
+    width: 100%;
+    max-width: 360px;
+}
+#expenseForm .add-expense-submit:hover,
+#toggleExpenseFormBtn.add-expense-cta:hover {
+    background-color: #18734f;
+    border-color: #18734f;
+}
+/* the toggle matches the submit button inside the padded form card */
+#toggleExpenseFormBtn.add-expense-cta {
+    width: calc(100% - 3rem);
+}
+/* the submit button gets its own row: full width on phones, centered on wide screens */
+#expenseForm .add-expense-submit {
+    grid-column: 1 / -1;
+    justify-self: center;
+}

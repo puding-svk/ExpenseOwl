@@ -98,7 +98,7 @@
                     <input type="checkbox" id="reportGain" class="styled-checkbox">
                 </div>
 
-                <button type="submit" class="nav-button">Add Expense</button>
+                <button type="submit" class="nav-button add-expense-submit"><i class="fa-solid fa-plus"></i> Add Expense</button>
             </form>
             <div id="formMessage" class="form-message"></div>
         </div>
@@ -262,7 +262,7 @@
             const form = document.getElementById('expenseForm');
             form.dataset.editId = id;
             const submitButton = form.querySelector('button[type="submit"]');
-            submitButton.textContent = 'Update Expense';
+            submitButton.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Update Expense';
             
             form.scrollIntoView({ behavior: 'smooth' });
         }
@@ -464,7 +464,7 @@
                     document.getElementById('selected-tags').innerHTML = '';
                     selectedTags.clear();
                     delete form.dataset.editId;
-                    form.querySelector('button[type="submit"]').textContent = 'Add Expense';
+                    form.querySelector('button[type="submit"]').innerHTML = '<i class="fa-solid fa-plus"></i> Add Expense';
                     await initialize();
                     const today = new Date();
                     const year = today.getFullYear();

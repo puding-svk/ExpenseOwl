@@ -59,7 +59,7 @@
         </div>
 
         <div class="table-controls">
-            <button id="toggleExpenseFormBtn" class="nav-button"><i class="fa-solid fa-plus"></i> Add Expense</button>
+            <button id="toggleExpenseFormBtn" class="nav-button add-expense-cta"><i class="fa-solid fa-plus"></i> Add Expense</button>
         </div>
 
         <div id="addExpenseContainer" style="display: none;">
@@ -110,7 +110,7 @@
                         <input type="checkbox" id="reportGain" class="styled-checkbox">
                     </div>
     
-                    <button type="submit" class="nav-button">Add Expense</button>
+                    <button type="submit" class="nav-button add-expense-submit"><i class="fa-solid fa-plus"></i> Add Expense</button>
                 </form>
                 <div id="formMessage" class="form-message"></div>
             </div>
@@ -470,6 +470,7 @@
             if (action === 'show' || (action !== 'hide' && isHidden)) {
                 formContainer.style.display = 'block';
                 toggleBtn.innerHTML = '<i class="fa-solid fa-times"></i> Close';
+                toggleBtn.classList.remove('add-expense-cta');
                 
                 if (category) {
                     const categorySelect = document.getElementById('category');
@@ -478,6 +479,7 @@
             } else if (action === 'hide' || (action !== 'show' && !isHidden)) {
                 formContainer.style.display = 'none';
                 toggleBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Add Expense';
+                toggleBtn.classList.add('add-expense-cta');
             }
         }
 
